@@ -26,7 +26,7 @@ module.exports = function (app) {
       const filters = { project, ...req.query };
 
       try {
-        const issues = await Issue.find(filters);
+        const issues = await Issue.find(filters).select('-__v'); // Exclude __v field
         res.json(issues);
       } catch (err) {
         res.status(500).json({ error: 'Failed to retrieve issues' });
@@ -34,7 +34,7 @@ module.exports = function (app) {
     })
     .post(async function (req, res) {
       const project = req.params.project;
-      const { issue_title, issue_text, created_by, assigned_to, status_text } = req.body;
+      const { issue_title, issue_text, created_by, assigned_to = '', status_text = '' } = req.body;
 
       if (!issue_title || !issue_text || !created_by) {
         return res.json({ error: 'required field(s) missing' });
@@ -47,10 +47,24 @@ module.exports = function (app) {
           issue_text,
           created_by,
           assigned_to,
-          status_text
+          status_text,
+          open: true,
+          created_on: new Date(),
+          updated_on: new Date()
         });
+
         const savedIssue = await issue.save();
-        res.json(savedIssue);
+        res.json({
+          _id: savedIssue._id,
+          issue_title: savedIssue.issue_title,
+          issue_text: savedIssue.issue_text,
+          created_by: savedIssue.created_by,
+          assigned_to: savedIssue.assigned_to,
+          status_text: savedIssue.status_text,
+          created_on: savedIssue.created_on,
+          updated_on: savedIssue.updated_on,
+          open: savedIssue.open
+        });
       } catch (err) {
         res.status(500).json({ error: 'Failed to create issue' });
       }
@@ -68,9 +82,10 @@ module.exports = function (app) {
       }
 
       try {
+        updates.updated_on = new Date(); // Update the updated_on field
         const updatedIssue = await Issue.findByIdAndUpdate(
           _id,
-          { ...updates, updated_on: new Date() },
+          { ...updates },
           { new: true }
         );
         if (!updatedIssue) {

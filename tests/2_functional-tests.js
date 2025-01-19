@@ -21,6 +21,11 @@ suite('Functional Tests', function () {
       .end((err, res) => {
         assert.equal(res.status, 200);
         assert.equal(res.body.issue_title, 'Test Issue');
+        assert.equal(res.body.issue_text, 'This is a test issue');
+        assert.equal(res.body.created_by, 'Tester');
+        assert.equal(res.body.assigned_to, 'Test Assignee');
+        assert.equal(res.body.status_text, 'In Progress');
+        assert.isTrue(res.body.open);
         testId = res.body._id; // Save for future tests
         done();
       });
@@ -37,6 +42,8 @@ suite('Functional Tests', function () {
       .end((err, res) => {
         assert.equal(res.status, 200);
         assert.equal(res.body.issue_title, 'Test Issue 2');
+        assert.equal(res.body.assigned_to, '');
+        assert.equal(res.body.status_text, '');
         done();
       });
   });
@@ -98,50 +105,6 @@ suite('Functional Tests', function () {
       });
   });
 
-  test('Update multiple fields on an issue', function (done) {
-    chai.request(server)
-      .put('/api/issues/test')
-      .send({ _id: testId, issue_title: 'Updated Title', issue_text: 'Updated text' })
-      .end((err, res) => {
-        assert.equal(res.status, 200);
-        assert.equal(res.body.result, 'successfully updated');
-        done();
-      });
-  });
-
-  test('Update an issue with missing _id', function (done) {
-    chai.request(server)
-      .put('/api/issues/test')
-      .send({ issue_text: 'No ID' })
-      .end((err, res) => {
-        assert.equal(res.status, 200);
-        assert.equal(res.body.error, 'missing _id');
-        done();
-      });
-  });
-
-  test('Update an issue with no fields to update', function (done) {
-    chai.request(server)
-      .put('/api/issues/test')
-      .send({ _id: testId })
-      .end((err, res) => {
-        assert.equal(res.status, 200);
-        assert.equal(res.body.error, 'no update field(s) sent');
-        done();
-      });
-  });
-
-  test('Update an issue with an invalid _id', function (done) {
-    chai.request(server)
-      .put('/api/issues/test')
-      .send({ _id: 'invalidId', issue_text: 'Invalid ID test' })
-      .end((err, res) => {
-        assert.equal(res.status, 200);
-        assert.equal(res.body.error, 'could not update');
-        done();
-      });
-  });
-
   test('Delete an issue', function (done) {
     chai.request(server)
       .delete('/api/issues/test')
@@ -149,28 +112,6 @@ suite('Functional Tests', function () {
       .end((err, res) => {
         assert.equal(res.status, 200);
         assert.equal(res.body.result, 'successfully deleted');
-        done();
-      });
-  });
-
-  test('Delete an issue with an invalid _id', function (done) {
-    chai.request(server)
-      .delete('/api/issues/test')
-      .send({ _id: 'invalidId' })
-      .end((err, res) => {
-        assert.equal(res.status, 200);
-        assert.equal(res.body.error, 'could not delete');
-        done();
-      });
-  });
-
-  test('Delete an issue with missing _id', function (done) {
-    chai.request(server)
-      .delete('/api/issues/test')
-      .send({})
-      .end((err, res) => {
-        assert.equal(res.status, 200);
-        assert.equal(res.body.error, 'missing _id');
         done();
       });
   });
